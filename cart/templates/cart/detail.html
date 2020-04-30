@@ -1,0 +1,60 @@
+{% extends 'base.html' %}
+{% load static %}
+{% block title %}
+    Your Shopping Cart
+{% endblock %}
+
+
+{% block content %}
+    <div class="container">
+        <div class="row" style="margin-top: 6%">
+        <h2>Your Shopping Cart</h2>
+            <table class="table table-striped table-hover">
+                <thead style="background-color: #7EBCFF">
+                    <tr>
+                        <th>Image</th>
+                        <th>Product</th>
+                        <th>Quantity</th>
+                        <th>Remove</th>
+                        <th>Unit Price</th>
+                        <th>Price</th>
+                    </tr>
+                </thead>
+                <tbody>
+                {% for item in cart %}
+                    {% with product=item.product  %}
+                        <tr>
+                            <td>
+                                <a href="{{ product.get_absolute_url }}">
+                                    <img src='{{ MEDIA_URL}}{{product.image}}' onerror="if (this.src != '{{ MEDIA_URL}}product/default.jpg') this.src = '{{ MEDIA_URL}}product/default.jpg';" alt=".." style="height: 170px; width: 228px;">
+                                </a>
+                            </td>
+                            <td>{{ product.name }}</td>
+                            <td>
+                                {{item.quantity}}
+                            </td>
+                            <td>
+                                <a href="{% url "cart:cart_remove" product.id %}">Remove</a><br/>
+                            </td>
+                            <td>Rs. {{ item.price }}</td>
+                            <td>Rs. {{ item.total_price }}</td>
+                        </tr>
+                    {% endwith %}
+                {% endfor %}
+                <tr style="background-color: #7EBCFF">
+                    <td><b>Total</b></td>
+                    <td colspan="4"></td>
+                    <td colspan="num"><b>Rs. {{ cart.get_total_price }}</b></td>
+                </tr>
+                </tbody>
+            </table>
+        <p class="text-right">
+            <a href="{% url "shop:product_list" %}" class="btn btn-default">Continue Shopping</a>
+            <form action="{% url "orders:order_create" %}" method="post">
+                {% csrf_token %}
+                <input type="submit" value="Checkout" class="btn btn-primary">
+            </form>
+        </p>
+        </div>
+    </div>
+{% endblock %}

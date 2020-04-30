@@ -1,0 +1,60 @@
+{% extends 'base.html' %}
+{% load static %}
+{% load crispy_forms_tags %}
+
+{% block content %}
+<section class="welcome_area bg-img background-overlay" style='background-image: url({% static "assets" %}/img/bg-img/bg-1.jpg);min-height: 700px'>
+        <div class="container h-100">
+            <div class="row h-100 align-items-center">
+                <div class="col-12">
+                    <div class="hero-content">
+                      <h2>Partner With Us.</h2>
+                      <form method="post" novalidate enctype="multipart/form-data">
+                        {% csrf_token %}
+                        <table>
+                        {% for field in form %}
+                          <tr>
+                              <td> {{ field|as_crispy_field }}</td>
+                          </tr>
+                        {% endfor %}
+                        </table>
+                        <button id="submit" type="submit" class="btn btn-success" disabled="true">Submit</button>
+                      </form>
+                      Already have an account? Login <a href="{% url 'login' %}">here!</a><br/>
+                      </div>
+                </div>
+            </div>
+        </div>
+    </section>
+  <script type="text/javascript">
+    $("#id_area").attr('readonly',true);
+    function zipcodeAutoFill() {
+      var el = $("#id_zipcode");
+      if ((el.val().length == 6) && $.isNumeric(el.val())) {
+        var url = "https://api.data.gov.in/resource/7eca2fa3-d6f5-444e-b3d6-faa441e35294?api-key=579b464db66ec23bdd000001d22f98db0e47476473cb37a25b6956be&fields=villagename&format=json&limit=1&filters[pincode]=" + el.val();
+        var client = new XMLHttpRequest();
+        client.open("GET", url, true);
+        client.onreadystatechange = function() {
+        if(client.readyState == 4) {
+          var json = JSON.parse(client.responseText);
+          if (json.records.length > 0){
+            var area = json.records[0].villagename;
+            $("#id_area").val(area);
+            $("#submit").attr('disabled',false);
+          }
+          else {
+            $("#submit").attr('disabled',true);
+            $("#id_area").val('Enter a valid zipcode.')
+          }
+        };
+      };
+      client.send();
+    }else{
+      $("#submit").attr('disabled',true);
+    }
+  }
+    $(window).on('load', zipcodeAutoFill());
+    $("#id_zipcode").keyup(zipcodeAutoFill);
+
+</script>
+{% endblock %}

@@ -1,0 +1,223 @@
+{% load static %}
+<!DOCTYPE html>
+<html>
+  <head>
+    <script src="https://use.typekit.net/hoy3lrg.js"></script>
+    <script>try{Typekit.load({ async: true });}catch(e){}</script>
+    <script src="//maxcdn.bootstrapcdn.com/bootstrap/4.0.0/js/bootstrap.min.js"></script>
+    <script src="//cdnjs.cloudflare.com/ajax/libs/jquery/3.2.1/jquery.min.js"></script>
+    <script src="//netdna.bootstrapcdn.com/bootstrap/3.0.0/js/bootstrap.min.js"></script>
+    <script src="//code.jquery.com/jquery-1.11.1.min.js"></script>
+    <link rel="stylesheet" href="{% static 'style.css' %}" />
+  </head>
+
+<body>
+  <style>
+  .close {
+    position: absolute;
+    right: 32px;
+    top: 32px;
+    width: 32px;
+    height: 32px;
+    opacity: 0.3;
+    z-index: 3;
+  }
+  .close:hover {
+    opacity: 1;
+  }
+  .close:before, .close:after {
+    position: absolute;
+    left: 15px;
+    content: ' ';
+    height: 33px;
+    width: 2px;
+    background-color: #333;
+  }
+  .close:before {
+    transform: rotate(45deg);
+  }
+  .close:after {
+    transform: rotate(-45deg);
+  }
+
+
+  .loader {
+    border: 16px solid #f3f3f3;
+    border-radius: 50%;
+    border-top: 16px solid #3498db;
+    width: 120px;
+    height: 120px;
+    -webkit-animation: spin 2s linear infinite; /* Safari */
+    animation: spin 2s linear infinite;
+    position: absolute;
+    top:0;
+    bottom: 0;
+    left: 0;
+    right: 0;
+
+    margin: auto;
+  }
+
+  /* Safari */
+  @-webkit-keyframes spin {
+    0% { -webkit-transform: rotate(0deg); }
+    100% { -webkit-transform: rotate(360deg); }
+  }
+
+  @keyframes spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+  }
+  </style>
+  <div id="wait">
+    <center>
+    <div class="loader"></div>
+    Connecting...
+    </center>
+  </div>
+  {% if request.user.user_type == 3 %}
+    <a href="{% url 'executive:support' %}" class="close" onclick="execDisc()"></a>
+  {% else %}
+    <a href="{% url 'chat:support_success' %}" class="close" onclick="custDisc()"></a>
+  {% endif %}
+  <div id="frame" style="display: none;" class="border">
+    <div class="responsive-html5-chat">
+    </div>
+  </div>
+
+
+<script src="{% static 'main.js' %}"></script>
+<script src="{% static 'reconnecting-websocket.js' %}"></script>
+<script>
+    var roomName = {{ room_name_json }};
+    var username = {{ username }};
+    var user_type = {{ user_type}};
+
+    var chatSocket = new ReconnectingWebSocket(
+        'ws://' + window.location.host +
+        '/ws/chat/' + roomName + '/');
+
+    chatSocket.onopen = function(e) {
+      fetchMessages();
+      if (user_type === 3){
+        clearTimeout(timer);
+        document.querySelector('#wait').style.display = 'none'
+        document.querySelector('#frame').style.display = 'block'
+        chatSocket.send(JSON.stringify({
+          'command': 'executive_connected',
+          'message': '',
+          'from': username
+          }));
+      }
+    }
+
+    chatSocket.onmessage = function(e) {
+        var data = JSON.parse(e.data);
+        if (data['command'] === 'messages') {
+          for (let i=0; i<data['messages'].length; i++) {
+            createMessage(data['messages'][i]);
+          }
+        } else if (data['command'] === 'new_message'){
+          createMessage(data['message']);
+        } else if (data['command'] === 'executive_connected'){
+          clearTimeout(timer);
+          document.querySelector('#wait').style.display = 'none'
+          document.querySelector('#frame').style.display = 'block'
+        } else if (data['command'] === 'user_left'){
+          if (user_type === 1){
+            window.onbeforeunload = null;
+            window.location = "{% url 'chat:support_error' %}";
+          } else {
+            $('.responsive-html5-chat').append('<div style="position:fixed; top:0;width:100%;text-align:center;font-size:30px;" class="message"><p>Customer has left the chat</p></div>');
+          }
+        }
+    };
+
+    chatSocket.onclose = function(e) {
+        console.error('Chat socket closed unexpectedly');
+    };
+
+    function fetchMessages() {
+      chatSocket.send(JSON.stringify({'command': 'fetch_messages' }));
+    }
+
+    function createMessage(data) {
+      var author = data['author']
+      if (author === username) {
+        responsiveChatPush('.chat', username, 'me', data.timestamp.slice(0,19) , data.content);
+      } else {
+        if (user_type == 3){
+          responsiveChatPush('.chat', 'Customer', 'you', data.timestamp.slice(0,19) , data.content);
+        }else{
+          responsiveChatPush('.chat', 'Executive', 'you', data.timestamp.slice(0,19) , data.content);
+        }
+      }
+    }
+</script>
+<script type="text/javascript">
+  
+function responsiveChat(element) {
+    $(element).html('<form class="chat"><span></span><div class="messages"></div><input type="text" placeholder="Your message"><input type="submit" value="Send"></form>');
+
+    function showLatestMessage() {
+        $(element).find('.messages').scrollTop($(element).find('.messages').height());
+    }
+    showLatestMessage();
+
+
+    $(element + ' input[type="text"]').keypress(function (event) {
+        if (event.which == 13) {
+            event.preventDefault();
+            $(element + ' input[type="submit"]').click();
+        }
+    });
+    $(element + ' input[type="submit"]').click(function (event) {
+        event.preventDefault();
+        var message = $(element + ' input[type="text"]').val();
+        if (message.length != 0){
+          chatSocket.send(JSON.stringify({
+              'command': 'new_message',
+              'message': message,
+              'from': username
+          }));
+          $(element + ' input[type="text"]').val("");
+          showLatestMessage();
+      }
+    });
+}
+
+function responsiveChatPush(element, sender, origin, date, message) {
+    var originClass;
+    if (origin == 'me') {
+        originClass = 'myMessage';
+    } else {
+        originClass = 'fromThem';
+    }
+    $(element + ' .messages').append('<div class="message"><div class="' + originClass + '"><p>' + message + '</p><date><b>' + sender + '</b> ' + date + '</date></div></div>');
+}
+
+/* Activating chatbox on element */
+responsiveChat('.responsive-html5-chat');
+
+window.onbeforeunload = function() { 
+    window.setTimeout(function () { 
+        window.location = "{% url 'home' %}";
+    }, 0); 
+    window.onbeforeunload = null; // necessary to prevent infinite loop, that kills your browser 
+}
+var timer = setTimeout(function() {
+            window.onbeforeunload = null;
+            window.location = "{% url 'chat:support_error' %}";
+        }, 15000);
+function execDisc(){
+  window.onbeforeunload = null;
+  window.location = "{% url 'executive:support' %}";
+}
+function custDisc(){
+  window.onbeforeunload = null;
+  window.location = "{% url 'chat:support_success' %}";
+}
+</script>
+</body>
+
+</html>

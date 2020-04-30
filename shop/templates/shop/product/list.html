@@ -1,0 +1,83 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}
+    {% if category %}{{ category.name }} {% else %} Products {% endif %}
+{% endblock %}
+
+{% block content %}
+      <!-- ##### Breadcumb Area Start ##### -->
+    <div class="breadcumb_area bg-img" style="background-image: url({% static 'assets' %}/img/bg-img/breadcumb.jpg);">
+        <div class="container h-100">
+            <div class="row h-100 align-items-center">
+                <div class="col-12">
+                    <div class="page-title text-center">
+                        <h2>shop</h2>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <!-- ##### Breadcumb Area End ##### -->
+      <section class="shop_grid_area section-padding-80">
+        <div class="container">
+            <div class="row">
+                <div class="col-12 col-md-4 col-lg-3">
+                    <div class="shop_sidebar_area">
+
+                        <!-- ##### Single Widget ##### -->
+                        <div class="widget catagory mb-50">
+                            <!-- Category Title -->
+                            <h6 class="widget-title mb-30">Categories</h6>
+                            
+                            <!--  Categories  -->
+                            <div class="catagories-menu">
+                                <ul class="sub-menu">
+                                    <li><a href="{% url 'shop:product_list' %}">All</a></li>
+                                    {% for c in categories %}
+                                    <li><a href="{{ c.get_absolute_url }}">{{ c.name }}</a></li>
+                                    {% endfor %}
+                                </ul>      
+                            </div>
+                        </div>
+                      </div>
+                    </div>
+                    <div class="col-12 col-md-8 col-lg-9">
+                      <div class="shop_grid_product_area">
+                        <div class="row">
+
+                            <!-- Single Product -->
+                            {% for product in products %}
+                            <div class="col-12 col-sm-6 col-lg-4">
+                                <div class="single-product-wrapper">
+                                    <!-- Product Image -->
+                                    <div class="product-img">
+                                        <img src='{{ MEDIA_URL}}{{product.image}}' onerror="if (this.src != '{{ MEDIA_URL}}product/default.jpg') this.src = '{{ MEDIA_URL}}product/default.jpg';" alt="">
+                                    </div>
+
+                                    <!-- Product Description -->
+                                    <div class="product-description">
+                                      <span>{{ product.category }}</span>
+                                        <a href="{{ product.get_absolute_url }}">
+                                            <h6>{{ product.name }}</h6>
+                                        </a>
+                                        <p class="product-price">₹{{ product.price }}</p>
+
+                                        <!-- Hover Content -->
+                                        <div class="hover-content">
+                                            <!-- Add to Cart -->
+                                            <div class="add-to-cart-btn">
+                                                <a href="{{ product.get_absolute_url }}" class="btn essence-btn">Add to Cart</a>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            {% endfor %}
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </section>
+{% endblock %}

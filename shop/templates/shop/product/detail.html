@@ -1,0 +1,51 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}
+    {% if category %}{{ category.name }} {% else %} Products {% endif %}
+{% endblock %}
+
+
+{% block content %}
+      <section class="single_product_details_area d-flex align-items-center">
+
+        <!-- Single Product Thumb -->
+        <div class="single_product_thumb clearfix">
+          <img src='{{ MEDIA_URL}}{{product.image}}' onerror="if (this.src != '{{ MEDIA_URL}}product/default.jpg') this.src = '{{ MEDIA_URL}}product/default.jpg';" alt="">
+        </div>
+
+        <!-- Single Product Description -->
+        <div class="single_product_desc clearfix">
+            <span>{{product.category}}</span>
+            <h2>{{ product.name }}</h2>
+            <p class="product-price">₹{{ product.price }}</p>
+            <p class="product-desc">{{ product.description|safe|linebreaksbr }}</p>
+            <!-- Form -->
+            <form id = "form1" action="{% url 'cart:cart_add' product.id %}" method="post" class="cart-form clearfix" method="post">
+              {% csrf_token %}
+                <!-- Select Box -->
+                <div class="select-box d-flex mt-50 mb-30">
+                    <select name="quantity" id="productQty" class="mr-5">
+                        {% for n in product_stock_list %}
+                        <option value="{{n}}">Qty: {{n}}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <!-- Cart & Favourite Box -->
+                <div class="cart-fav-box d-flex align-items-center">
+                    <!-- Cart -->
+                    <input id="added" type="button" value="Add to cart" class="btn essence-btn" onclick="myfunc()" style="width: 50px">
+                </div>
+            </form>
+          </div>
+        </section>
+        <script type="text/javascript">
+            function myfunc(){
+                $('#added').attr('value',"Adding..");
+                setTimeout(delayedSubmit, 1000);
+            }
+            function delayedSubmit(){
+                $('#form1').submit();
+            }
+        </script>
+{% endblock %}
